@@ -43,11 +43,20 @@ where
     TX: embedded_hal::serial::Write<u8>,
     RX: embedded_hal::serial::Read<u8>,
 {
+    /// `new` consumes an `SPIDriver` object and binds it to a HAL container.
+    ///
+    /// The variable recieving the result of `new` establishes the lifetime
+    /// for all of the individual HAL objects derived from it.
+    ///
+    /// The next step after calling `new` and saving its result in a variable
+    /// is to call` split` on that stored result.
     pub fn new(sd: SPIDriver<TX, RX>) -> Self {
         let dev = SD(sd);
         Self(core::cell::RefCell::new(dev))
     }
 
+    /// `split` derives a set of distinct HAL objects representing different
+    /// functions of the wrapped `SPIDriver`.
     pub fn split<'a>(&'a self) -> Parts<'a, Self> {
         Parts::new(&self)
     }
