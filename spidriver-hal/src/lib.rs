@@ -36,9 +36,7 @@ use hal::{Comms, Parts};
 pub struct SPIDriverHAL<
     UARTTX: embedded_hal::serial::Write<u8>,
     UARTRX: embedded_hal::serial::Read<u8>,
-> {
-    sd: SPIDriver<UARTTX, UARTRX>,
-}
+>(SPIDriver<UARTTX, UARTRX>);
 
 impl<TX, RX> SPIDriverHAL<TX, RX>
 where
@@ -46,7 +44,7 @@ where
     RX: embedded_hal::serial::Read<u8>,
 {
     pub fn new(sd: SPIDriver<TX, RX>) -> Self {
-        Self { sd: sd }
+        Self(sd)
     }
 
     pub fn split<'a>(&'a self) -> Parts<'a, Self> {
@@ -63,18 +61,18 @@ where
 
     fn set_cs(&mut self, high: bool) -> Result<(), Self::Error> {
         if high {
-            self.sd.unselect() // SPI is active low, so high means unselected
+            self.0.unselect() // SPI is active low, so high means unselected
         } else {
-            self.sd.select()
+            self.0.select()
         }
     }
 
     fn set_a(&mut self, high: bool) -> Result<(), Self::Error> {
-        self.sd.set_a(high)
+        self.0.set_a(high)
     }
 
     fn set_b(&mut self, high: bool) -> Result<(), Self::Error> {
-        self.sd.set_b(high)
+        self.0.set_b(high)
     }
 
     fn write(&mut self, data: &[u8]) -> Result<(), Self::Error> {
@@ -82,7 +80,7 @@ where
         while remain.len() > 0 {
             let len: usize = if remain.len() > 64 { 64 } else { remain.len() };
             let (this, next) = remain.split_at(len);
-            self.sd.write(this)?;
+            self.0.write(this)?;
             remain = next;
         }
         Ok(())
@@ -93,7 +91,7 @@ where
         while remain.len() > 0 {
             let len: usize = if remain.len() > 64 { 64 } else { remain.len() };
             let (this, next) = remain.split_at_mut(len);
-            self.sd.transfer(this)?;
+            self.0.transfer(this)?;
             remain = next;
         }
         Ok(data)

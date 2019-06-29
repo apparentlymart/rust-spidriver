@@ -36,16 +36,14 @@ where
 
 /// `SPI` implements some of the SPI-related traits from `embedded-hal` in terms
 /// of an SPIDriver device.
-pub struct SPI<'a, SD: Comms> {
-    sd: &'a SD,
-}
+pub struct SPI<'a, SD: Comms>(&'a SD);
 
 impl<'a, SD: 'a> SPI<'a, SD>
 where
     SD: Comms,
 {
     fn new(sd: &'a SD) -> Self {
-        Self { sd: sd }
+        Self(sd)
     }
 }
 
@@ -73,16 +71,14 @@ where
 
 /// `CS` implements some of the digital IO traits from `embedded-hal` in
 /// terms of an SPIDriver device's Chip Select pin.
-pub struct CS<'a, SD: Comms> {
-    sd: &'a SD,
-}
+pub struct CS<'a, SD: Comms>(&'a SD);
 
 impl<'a, SD: 'a> CS<'a, SD>
 where
     SD: Comms,
 {
     fn new(sd: &'a SD) -> Self {
-        Self { sd: sd }
+        Self(sd)
     }
 }
 
@@ -103,16 +99,14 @@ where
 
 /// `PinA` implements some of the digital IO traits from `embedded-hal` in
 /// terms of an SPIDriver device's auxillary output pin A.
-pub struct PinA<'a, SD: Comms> {
-    sd: &'a SD,
-}
+pub struct PinA<'a, SD: Comms>(&'a SD);
 
 impl<'a, SD: 'a> PinA<'a, SD>
 where
     SD: Comms,
 {
     fn new(sd: &'a SD) -> Self {
-        Self { sd: sd }
+        Self(sd)
     }
 }
 
@@ -133,16 +127,14 @@ where
 
 /// `PinB` implements some of the digital IO traits from `embedded-hal` in
 /// terms of an SPIDriver device's auxillary output pin B.
-pub struct PinB<'a, SD: Comms> {
-    sd: &'a SD,
-}
+pub struct PinB<'a, SD: Comms>(&'a SD);
 
 impl<'a, SD: 'a> PinB<'a, SD>
 where
     SD: Comms,
 {
     fn new(sd: &'a SD) -> Self {
-        Self { sd: sd }
+        Self(sd)
     }
 }
 
