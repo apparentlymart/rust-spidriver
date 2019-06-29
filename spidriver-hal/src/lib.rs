@@ -40,7 +40,7 @@ pub struct SPIDriverHAL<
     sd: SPIDriver<UARTTX, UARTRX>,
 }
 
-impl<TX, RX> SPIDriverHAL<TX, RX>
+impl<'a, TX: 'a, RX: 'a> SPIDriverHAL<TX, RX>
 where
     TX: embedded_hal::serial::Write<u8>,
     RX: embedded_hal::serial::Read<u8>,
@@ -49,12 +49,12 @@ where
         Self { sd: sd }
     }
 
-    pub fn split<'a>(&'a self) -> Parts<'a, Self> {
-        Parts::new(&self)
+    pub fn split<MUT: hal::mutex::Mutex<Self>>(self) -> Parts<'a, Self, MUT> {
+        Parts::new(self)
     }
 }
 
-impl<TX, RX, TXErr, RXErr> Comms for SPIDriverHAL<TX, RX>
+impl<'a, TX, RX, TXErr, RXErr> Comms for SPIDriverHAL<TX, RX>
 where
     TX: embedded_hal::serial::Write<u8, Error = TXErr>,
     RX: embedded_hal::serial::Read<u8, Error = RXErr>,
