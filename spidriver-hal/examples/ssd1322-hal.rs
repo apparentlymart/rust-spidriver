@@ -1,4 +1,3 @@
-use embedded_hal::serial;
 use serial_embedded_hal::{PortSettings, Serial};
 use spidriver::SPIDriver;
 use spidriver_hal::SPIDriverHAL;
@@ -33,8 +32,8 @@ fn main() {
 
     // Pulse the reset signal to reset the OLED driver chip before we do
     // anything else.
-    sd.set_b(false);
-    sd.set_b(true);
+    sd.set_b(false).unwrap();
+    sd.set_b(true).unwrap();
 
     let sdh = SPIDriverHAL::new(sd);
     let parts = sdh.split();

@@ -4,16 +4,19 @@ use embedded_hal::digital::v2 as gpiov2;
 pub trait Comms {
     type Error;
 
-    fn set_cs(&mut self, active: bool) -> Result<(), Self::Error>;
-    fn set_a(&mut self, active: bool) -> Result<(), Self::Error>;
-    fn set_b(&mut self, active: bool) -> Result<(), Self::Error>;
-    fn write(&mut self, data: &[u8]) -> Result<(), Self::Error>;
-    fn transfer<'w>(&mut self, data: &'w mut [u8]) -> Result<&'w [u8], Self::Error>;
+    fn set_cs(&self, active: bool) -> Result<(), Self::Error>;
+    fn set_a(&self, active: bool) -> Result<(), Self::Error>;
+    fn set_b(&self, active: bool) -> Result<(), Self::Error>;
+    fn write(&self, data: &[u8]) -> Result<(), Self::Error>;
+    fn transfer<'w>(&self, data: &'w mut [u8]) -> Result<&'w [u8], Self::Error>;
 }
 
 /// `Parts` is a container for the various parts of a SPIDriver that can be
 /// used separately via distinct HAL traits.
-pub struct Parts<'a, SD: Comms> {
+pub struct Parts<'a, SD: 'a>
+where
+    SD: Comms,
+{
     pub spi: SPI<'a, SD>,
     pub cs: CS<'a, SD>,
     pub pin_a: PinA<'a, SD>,
@@ -26,10 +29,10 @@ where
 {
     pub(crate) fn new(sd: &'a SD) -> Self {
         Self {
-            spi: SPI::new(sd),
-            cs: CS::new(sd),
-            pin_a: PinA::new(sd),
-            pin_b: PinB::new(sd),
+            spi: SPI::new(&sd),
+            cs: CS::new(&sd),
+            pin_a: PinA::new(&sd),
+            pin_b: PinB::new(&sd),
         }
     }
 }
@@ -54,7 +57,7 @@ where
     type Error = E;
 
     fn transfer<'w>(&mut self, data: &'w mut [u8]) -> Result<&'w [u8], E> {
-        panic!("not yet");
+        self.0.transfer(data)
     }
 }
 
@@ -65,7 +68,7 @@ where
     type Error = E;
 
     fn write(&mut self, data: &[u8]) -> Result<(), E> {
-        panic!("not yet");
+        self.0.write(data)
     }
 }
 
@@ -89,11 +92,11 @@ where
     type Error = E;
 
     fn set_low(&mut self) -> Result<(), E> {
-        panic!("not yet");
+        self.0.set_cs(false)
     }
 
     fn set_high(&mut self) -> Result<(), E> {
-        panic!("not yet");
+        self.0.set_cs(true)
     }
 }
 
@@ -117,11 +120,11 @@ where
     type Error = E;
 
     fn set_low(&mut self) -> Result<(), E> {
-        panic!("not yet");
+        self.0.set_a(false)
     }
 
     fn set_high(&mut self) -> Result<(), E> {
-        panic!("not yet");
+        self.0.set_a(true)
     }
 }
 
@@ -145,10 +148,10 @@ where
     type Error = E;
 
     fn set_low(&mut self) -> Result<(), E> {
-        panic!("not yet");
+        self.0.set_b(false)
     }
 
     fn set_high(&mut self) -> Result<(), E> {
-        panic!("not yet");
+        self.0.set_b(true)
     }
 }

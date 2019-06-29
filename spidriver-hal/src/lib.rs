@@ -36,7 +36,7 @@ use hal::{Comms, Parts};
 pub struct SPIDriverHAL<
     UARTTX: embedded_hal::serial::Write<u8>,
     UARTRX: embedded_hal::serial::Read<u8>,
->(SPIDriver<UARTTX, UARTRX>);
+>(core::cell::RefCell<SD<UARTTX, UARTRX>>);
 
 impl<TX, RX> SPIDriverHAL<TX, RX>
 where
@@ -44,13 +44,24 @@ where
     RX: embedded_hal::serial::Read<u8>,
 {
     pub fn new(sd: SPIDriver<TX, RX>) -> Self {
-        Self(sd)
+        let dev = SD(sd);
+        Self(core::cell::RefCell::new(dev))
     }
 
     pub fn split<'a>(&'a self) -> Parts<'a, Self> {
         Parts::new(&self)
     }
+
+    pub(crate) fn with_mut_sd<R>(&self, f: impl FnOnce(&mut SD<TX, RX>) -> R) -> R {
+        let mut sd = self.0.borrow_mut();
+        f(&mut *sd)
+    }
 }
+
+pub(crate) struct SD<
+    UARTTX: embedded_hal::serial::Write<u8>,
+    UARTRX: embedded_hal::serial::Read<u8>,
+>(SPIDriver<UARTTX, UARTRX>);
 
 impl<TX, RX, TXErr, RXErr> Comms for SPIDriverHAL<TX, RX>
 where
@@ -59,41 +70,48 @@ where
 {
     type Error = spidriver::Error<TXErr, RXErr>;
 
-    fn set_cs(&mut self, high: bool) -> Result<(), Self::Error> {
-        if high {
-            self.0.unselect() // SPI is active low, so high means unselected
-        } else {
-            self.0.select()
-        }
+    fn set_cs(&self, high: bool) -> Result<(), Self::Error> {
+        self.with_mut_sd(|sd| {
+            if high {
+                sd.0.unselect() // SPI is active low, so high means unselected
+            } else {
+                sd.0.select()
+            }
+        })
     }
 
-    fn set_a(&mut self, high: bool) -> Result<(), Self::Error> {
-        self.0.set_a(high)
+    fn set_a(&self, high: bool) -> Result<(), Self::Error> {
+        self.with_mut_sd(|sd| sd.0.set_a(high))
     }
 
-    fn set_b(&mut self, high: bool) -> Result<(), Self::Error> {
-        self.0.set_b(high)
+    fn set_b(&self, high: bool) -> Result<(), Self::Error> {
+        self.with_mut_sd(|sd| sd.0.set_b(high))
     }
 
-    fn write(&mut self, data: &[u8]) -> Result<(), Self::Error> {
-        let mut remain = data;
-        while remain.len() > 0 {
-            let len: usize = if remain.len() > 64 { 64 } else { remain.len() };
-            let (this, next) = remain.split_at(len);
-            self.0.write(this)?;
-            remain = next;
-        }
-        Ok(())
+    fn write(&self, data: &[u8]) -> Result<(), Self::Error> {
+        self.with_mut_sd(|sd| {
+            let mut remain = data;
+            while remain.len() > 0 {
+                let len: usize = if remain.len() > 64 { 64 } else { remain.len() };
+                let (this, next) = remain.split_at(len);
+                sd.0.write(this)?;
+                remain = next;
+            }
+            Ok(())
+        })
     }
 
-    fn transfer<'w>(&mut self, data: &'w mut [u8]) -> Result<&'w [u8], Self::Error> {
-        let mut remain = &mut data[..];
-        while remain.len() > 0 {
-            let len: usize = if remain.len() > 64 { 64 } else { remain.len() };
-            let (this, next) = remain.split_at_mut(len);
-            self.0.transfer(this)?;
-            remain = next;
-        }
+    fn transfer<'w>(&self, data: &'w mut [u8]) -> Result<&'w [u8], Self::Error> {
+        self.with_mut_sd(|sd| {
+            let mut remain = &mut data[..];
+            while remain.len() > 0 {
+                let len: usize = if remain.len() > 64 { 64 } else { remain.len() };
+                let (this, next) = remain.split_at_mut(len);
+                sd.0.transfer(this)?;
+                remain = next;
+            }
+            Ok(())
+        })?;
         Ok(data)
     }
 }
