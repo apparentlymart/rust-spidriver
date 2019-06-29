@@ -60,6 +60,17 @@ where
     }
 }
 
+impl<'a, SD: 'a, E> spi::Write<u8> for SPI<'a, SD>
+where
+    SD: Comms<Error = E>,
+{
+    type Error = E;
+
+    fn write(&mut self, data: &[u8]) -> Result<(), E> {
+        panic!("not yet");
+    }
+}
+
 /// `CS` implements some of the digital IO traits from `embedded-hal` in
 /// terms of an SPIDriver device's Chip Select pin.
 pub struct CS<'a, SD: Comms> {
