@@ -3,6 +3,10 @@ name = "spidriver"
 version = "0.1.0"
 authors = ["Martin Atkins <mart@degeneration.co.uk>"]
 edition = "2018"
+description = "A library for communicating with a SPIDriver device."
+license = "MIT"
+keywords = ["nostd"]
+repository = "https://github.com/apparentlymart/rust-spidriver"
 
 [dependencies]
 embedded-hal = "^0.2.3"
